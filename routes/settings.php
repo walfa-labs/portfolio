@@ -6,7 +6,9 @@ use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
-    Route::redirect('settings', '/settings/profile');
+    Route::match(['GET', 'HEAD'], 'settings', '\Illuminate\Routing\RedirectController')
+        ->defaults('destination', '/settings/profile')
+        ->defaults('status', 302);
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -125,6 +125,6 @@ return [
     |
     */
 
-    'browser_log_levels' => explode(',', env('BOOST_BROWSER_LOG_LEVELS', 'error,warning,info,debug')),
+    'browser_log_levels' => explode(',', (string) env('BOOST_BROWSER_LOG_LEVELS', 'error,warning,info,debug')),
 
 ];

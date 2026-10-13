@@ -22,13 +22,42 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
+        <!--
+            These four are forced, and mirrored into $_SERVER, because the
+            in-container run would otherwise share one live Redis (and SMTP)
+            across every test instead of getting per-process array/sync drivers:
+            cache entries — rate-limiter buckets, the cached sitemap document —
+            then leak between tests that assume a fresh store.
+
+            Two separate mechanisms are needed. <env> is non-forcing by default
+            and only applies when the variable is unset, so force="true" is
+            required for it to win over the compose environment. But PHPUnit
+            writes <env> into getenv() and $_ENV only — never $_SERVER — and
+            Laravel's env() reads $_SERVER first (phpdotenv's
+            RepositoryBuilder::DEFAULT_ADAPTERS lists ServerConstAdapter ahead of
+            EnvConstAdapter and PutenvAdapter). The compose stack's real values
+            therefore still won through $_SERVER with force="true" alone; <server>
+            is applied unconditionally, so it is what actually pins these.
+        -->
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <server name="CACHE_STORE" value="array"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <server name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <server name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <server name="SESSION_DRIVER" value="array"/>
+        <!--
+            Deliberately NOT forced. Step 8 of the §11.5 exit gate runs this same
+            suite inside the compose stack precisely so it executes against
+            MariaDB instead of in-memory sqlite; forcing these would silently
+            downgrade that run to sqlite and delete the only engine-divergence
+            coverage the gate provides. On the host nothing sets them, so the
+            sqlite defaults below still apply.
+        -->
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
-        <env name="MAIL_MAILER" value="array"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

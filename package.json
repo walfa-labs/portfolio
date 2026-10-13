@@ -3,12 +3,14 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vp build",
+        "build": "vp build && node scripts/patch-wayfinder.mjs",
         "build:ssr": "vp build && vp build --ssr",
         "dev": "vp dev",
         "check": "vp check",
+        "check:a11y": "node resources/js/scripts/check-contrast.mjs",
         "check:fix": "vp check --fix",
-        "types:check": "vue-tsc --noEmit"
+        "types:check": "node scripts/patch-wayfinder.mjs && vue-tsc --noEmit",
+        "wayfinder:generate": "php artisan wayfinder:generate --with-form && node scripts/patch-wayfinder.mjs"
     },
     "dependencies": {
         "@inertiajs/vite": "^3.0.0",
