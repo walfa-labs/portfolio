@@ -47,6 +47,20 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate that the user is the portfolio administrator.
+     *
+     * The email is pinned to the configured administrator address, which is the
+     * only thing `User::isAdministrator()` compares (§5.7).
+     */
+    public function administrator(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email' => config('portfolio.admin.email'),
+            'email_verified_at' => now(),
+        ]);
+    }
+
+    /**
      * Indicate that the model has two-factor authentication configured.
      */
     public function withTwoFactor(): static

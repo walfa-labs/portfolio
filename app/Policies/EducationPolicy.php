@@ -1,0 +1,73 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\Education;
+use App\Models\User;
+
+class EducationPolicy
+{
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->isAdministrator();
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Education $education): bool
+    {
+        return $user->isAdministrator();
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create(User $user): bool
+    {
+        return $user->isAdministrator();
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, Education $education): bool
+    {
+        return $user->isAdministrator();
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, Education $education): bool
+    {
+        return $user->isAdministrator();
+    }
+
+    /**
+     * Determine whether the user can publish the model.
+     */
+    public function publish(User $user, Education $education): bool
+    {
+        return $user->isAdministrator();
+    }
+
+    /**
+     * Determine whether the user can unpublish the model.
+     */
+    public function unpublish(User $user, Education $education): bool
+    {
+        return $user->isAdministrator();
+    }
+
+    /**
+     * Determine whether the user can reorder the model.
+     */
+    public function reorder(User $user): bool
+    {
+        return $user->isAdministrator();
+    }
+}

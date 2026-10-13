@@ -40,10 +40,6 @@ use Inertia\Inertia;
 
 Route::get('/', HomeController::class)->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
-});
-
 Route::get('/experience', [WorkExperienceController::class, 'index'])->name('experience.index');
 Route::get('/education', [EducationController::class, 'index'])->name('education.index');
 Route::get('/certifications', [CertificationController::class, 'index'])->name('certifications.index');
@@ -130,3 +126,10 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/robots.txt', RobotsController::class)->name('robots');
 
 require __DIR__.'/settings.php';
+
+/*
+ * The admin group moved to `routes/admin.php` in phase 6 (§5.8). It is required
+ * rather than inlined so the admin surface — routes, middleware and the
+ * `admin.` name prefix — has exactly one owner and one place to read.
+ */
+require __DIR__.'/admin.php';
