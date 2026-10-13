@@ -12,10 +12,14 @@ use App\Models\User;
 use App\Models\WorkExperience;
 use App\Models\Writing;
 use App\Observers\SitemapCacheObserver;
+use App\Support\JsonApi\JsonApiError;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
@@ -41,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRateLimiters();
+        $this->configurePagination();
         $this->configureInertiaExceptionHandling();
         $this->configureSitemapCacheInvalidation();
 
@@ -114,6 +119,27 @@ class AppServiceProvider extends ServiceProvider
         );
 
         RateLimiter::for(
+            'api-public-read',
+            fn (Request $request): Limit => Limit::perMinute(120)
+                ->by($request->ip())
+                ->response($this->jsonApiRateLimited()),
+        );
+
+        RateLimiter::for(
+            'api-search',
+            fn (Request $request): Limit => Limit::perMinute(30)
+                ->by($request->ip())
+                ->response($this->jsonApiRateLimited()),
+        );
+
+        RateLimiter::for(
+            'api-admin-write',
+            fn (Request $request): Limit => Limit::perMinute(60)
+                ->by($request->user()?->getAuthIdentifier() ?? $request->ip())
+                ->response($this->jsonApiRateLimited()),
+        );
+
+        RateLimiter::for(
             'media-upload',
             fn (Request $request): Limit => Limit::perMinute(30)
                 ->by($request->user()?->getAuthIdentifier() ?? $request->ip()),
@@ -175,5 +201,53 @@ class AppServiceProvider extends ServiceProvider
         ] as $model) {
             $model::observe(SitemapCacheObserver::class);
         }
+    }
+
+    /**
+     * The limiter response that makes a `429` a JSON:API document.
+     *
+     * `Limit::response()` is handed the limiter's own headers, which is where
+     * `Retry-After` and the `X-RateLimit-*` triple come from; the error body
+     * quotes `Retry-After` in its `detail` the way §4.6's example does.
+     *
+     * @return Closure(Request, array<string, mixed>): JsonResponse
+     */
+    protected function jsonApiRateLimited(): Closure
+    {
+        return static function (Request $request, array $headers): JsonResponse {
+            $retryAfter = $headers['Retry-After'] ?? null;
+
+            return JsonApiError::rateLimited(is_numeric($retryAfter) ? (int) $retryAfter : null)->response($headers);
+        };
+    }
+
+    /**
+     * Teach the paginator to read JSON:API's `page[number]` (§4.7).
+     *
+     * §4.7 pins this resolver so `page[number]` drives every API collection.
+     * The resolver is process-global, though, so the pinned one-liner —
+     * `max(1, (int) request()->input('page.number', 1))` — would silently break
+     * the public pages, which paginate with `?page=N` (`/search?q=…&page=2`):
+     * when `page` is a scalar, `input('page.number')` finds nothing and every
+     * public page would render page 1.
+     *
+     * So `page[number]` wins when it is present and a valid page, and the
+     * caller's own `$pageName` (`'page'`) is honoured otherwise. The API's
+     * allow-list rejects `?page=N` on `/api/v1/*` with a 400, so the fallback is
+     * reachable only from the web routes.
+     */
+    protected function configurePagination(): void
+    {
+        Paginator::currentPageResolver(function (string $pageName = 'page'): int {
+            $number = request()->input('page.number');
+
+            if (is_numeric($number) && (int) $number >= 1) {
+                return (int) $number;
+            }
+
+            $page = request()->input($pageName);
+
+            return is_numeric($page) && (int) $page >= 1 ? (int) $page : 1;
+        });
     }
 }

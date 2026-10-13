@@ -9,6 +9,7 @@
         "check": "vp check",
         "check:a11y": "node resources/js/scripts/check-contrast.mjs",
         "check:fix": "vp check --fix",
+        "lint:openapi": "redocly lint docs/api/openapi.yaml",
         "types:check": "node scripts/patch-wayfinder.mjs && vue-tsc --noEmit",
         "wayfinder:generate": "php artisan wayfinder:generate --with-form && node scripts/patch-wayfinder.mjs"
     },
@@ -31,6 +32,7 @@
     },
     "devDependencies": {
         "@laravel/vite-plugin-wayfinder": "^0.1.3",
+        "@redocly/cli": "^2.62.1",
         "@tailwindcss/vite": "^4.1.11",
         "@types/node": "^22.13.5",
         "@vitejs/plugin-vue": "^6.0.0",
