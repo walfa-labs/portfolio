@@ -60,6 +60,24 @@ return [
             'report' => false,
         ],
 
+        /*
+         * The private bucket (§9.3). It holds `cv` only and is reached through
+         * `AWS_PRIVATE_*` so the app can point at the internal Garage endpoint
+         * while the public disk keeps its own browser-reachable coordinates.
+         */
+        's3-private' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_PRIVATE_BUCKET', 'portfolio-private'),
+            'url' => env('AWS_PRIVATE_URL'),
+            'endpoint' => env('AWS_PRIVATE_ENDPOINT', 'http://garage:3900'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true),
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*
