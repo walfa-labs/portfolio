@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import FormErrorSummary from '@/components/FormErrorSummary.vue';
 import InputError from '@/components/InputError.vue';
+import PasskeyVerify from '@/components/PasskeyVerify.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -10,7 +12,6 @@ import {
     index as confirmOptions,
     store as confirmStore,
 } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
-import PasskeyVerify from '@/components/PasskeyVerify.vue';
 
 defineOptions({
     layout: {
@@ -40,8 +41,23 @@ defineOptions({
         v-slot="{ errors, processing }"
     >
         <div class="space-y-6">
+            <FormErrorSummary
+                :errors="errors"
+                :labels="{ password: 'Password' }"
+            />
+
+            <p class="text-meta text-muted-foreground">
+                Fields marked with an asterisk (*) are required.
+            </p>
+
             <div class="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label for="password">
+                    <span>
+                        Password
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
                 <PasswordInput
                     id="password"
                     name="password"
@@ -49,9 +65,13 @@ defineOptions({
                     required
                     autocomplete="current-password"
                     autofocus
+                    :aria-invalid="Boolean(errors.password)"
+                    :aria-describedby="
+                        errors.password ? 'password-error' : undefined
+                    "
                 />
 
-                <InputError :message="errors.password" />
+                <InputError id="password-error" :message="errors.password" />
             </div>
 
             <div class="flex items-center">

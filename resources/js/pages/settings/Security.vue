@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
+import FormErrorSummary from '@/components/FormErrorSummary.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -30,14 +32,48 @@ defineOptions({
         ],
     },
 });
+
+const passwordRulesText = computed((): string => {
+    const requirements: string[] = [];
+    const minLength = /minlength:\s*(\d+)/.exec(props.passwordRules)?.[1];
+
+    if (minLength) {
+        requirements.push(`at least ${minLength} characters`);
+    }
+
+    if (props.passwordRules.includes('required: lower')) {
+        requirements.push('a lowercase letter');
+    }
+
+    if (props.passwordRules.includes('required: upper')) {
+        requirements.push('an uppercase letter');
+    }
+
+    if (props.passwordRules.includes('required: digit')) {
+        requirements.push('a number');
+    }
+
+    if (props.passwordRules.includes('required: special')) {
+        requirements.push('a symbol');
+    }
+
+    return requirements.length > 0
+        ? `Your new password must contain ${requirements.join(', ')}.`
+        : 'Choose a strong password you do not use anywhere else.';
+});
+
+const passwordDescribedBy = (field: string, error?: string): string =>
+    ['password-rules', error ? `${field}-error` : undefined]
+        .filter(Boolean)
+        .join(' ');
 </script>
 
 <template>
     <Head title="Security settings" />
 
-    <h1 class="sr-only">Security settings</h1>
-
     <div class="space-y-6">
+        <Heading as="h1" variant="small" title="Security settings" />
+
         <Heading
             variant="small"
             title="Update password"
@@ -50,50 +86,105 @@ defineOptions({
                 preserveScroll: true,
             }"
             reset-on-success
-            :reset-on-error="[
-                'password',
-                'password_confirmation',
-                'current_password',
-            ]"
             class="space-y-6"
             v-slot="{ errors, processing }"
         >
+            <FormErrorSummary
+                :errors="errors"
+                :labels="{
+                    current_password: 'Current password',
+                    password: 'New password',
+                    password_confirmation: 'Confirm password',
+                }"
+            />
+
+            <p class="text-meta text-muted-foreground">
+                Fields marked with an asterisk (*) are required.
+            </p>
+
             <div class="grid gap-2">
-                <Label for="current_password">Current password</Label>
+                <Label for="current_password">
+                    <span>
+                        Current password
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
                 <PasswordInput
                     id="current_password"
                     name="current_password"
                     class="mt-1 block w-full"
+                    required
                     autocomplete="current-password"
                     placeholder="Current password"
+                    :aria-invalid="Boolean(errors.current_password)"
+                    :aria-describedby="
+                        errors.current_password
+                            ? 'current-password-error'
+                            : undefined
+                    "
                 />
-                <InputError :message="errors.current_password" />
+                <InputError
+                    id="current-password-error"
+                    :message="errors.current_password"
+                />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">New password</Label>
+                <Label for="password">
+                    <span>
+                        New password
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
+                <p id="password-rules" class="text-meta text-muted-foreground">
+                    {{ passwordRulesText }}
+                </p>
                 <PasswordInput
                     id="password"
                     name="password"
                     class="mt-1 block w-full"
+                    required
                     autocomplete="new-password"
                     placeholder="New password"
                     :passwordrules="props.passwordRules"
+                    :aria-invalid="Boolean(errors.password)"
+                    :aria-describedby="
+                        passwordDescribedBy('password', errors.password)
+                    "
                 />
-                <InputError :message="errors.password" />
+                <InputError id="password-error" :message="errors.password" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirm password</Label>
+                <Label for="password_confirmation">
+                    <span>
+                        Confirm password
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
                 <PasswordInput
                     id="password_confirmation"
                     name="password_confirmation"
                     class="mt-1 block w-full"
+                    required
                     autocomplete="new-password"
                     placeholder="Confirm password"
                     :passwordrules="props.passwordRules"
+                    :aria-invalid="Boolean(errors.password_confirmation)"
+                    :aria-describedby="
+                        passwordDescribedBy(
+                            'password_confirmation',
+                            errors.password_confirmation,
+                        )
+                    "
                 />
-                <InputError :message="errors.password_confirmation" />
+                <InputError
+                    id="password_confirmation-error"
+                    :message="errors.password_confirmation"
+                />
             </div>
 
             <div class="flex items-center gap-4">

@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
+import FormErrorSummary from '@/components/FormErrorSummary.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -30,10 +31,9 @@ const user = computed(() => page.props.auth.user);
 <template>
     <Head title="Profile settings" />
 
-    <h1 class="sr-only">Profile settings</h1>
-
     <div class="flex flex-col space-y-6">
         <Heading
+            as="h1"
             variant="small"
             title="Profile"
             description="Update your name and email address"
@@ -44,8 +44,23 @@ const user = computed(() => page.props.auth.user);
             class="space-y-6"
             v-slot="{ errors, processing }"
         >
+            <FormErrorSummary
+                :errors="errors"
+                :labels="{ name: 'Name', email: 'Email address' }"
+            />
+
+            <p class="text-meta text-muted-foreground">
+                Fields marked with an asterisk (*) are required.
+            </p>
+
             <div class="grid gap-2">
-                <Label for="name">Name</Label>
+                <Label for="name">
+                    <span>
+                        Name
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
                 <Input
                     id="name"
                     class="mt-1 block w-full"
@@ -54,12 +69,24 @@ const user = computed(() => page.props.auth.user);
                     required
                     autocomplete="name"
                     placeholder="Full name"
+                    :aria-invalid="Boolean(errors.name)"
+                    :aria-describedby="errors.name ? 'name-error' : undefined"
                 />
-                <InputError class="mt-2" :message="errors.name" />
+                <InputError
+                    id="name-error"
+                    class="mt-2"
+                    :message="errors.name"
+                />
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">
+                    <span>
+                        Email address
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
                 <Input
                     id="email"
                     type="email"
@@ -69,8 +96,14 @@ const user = computed(() => page.props.auth.user);
                     required
                     autocomplete="username"
                     placeholder="Email address"
+                    :aria-invalid="Boolean(errors.email)"
+                    :aria-describedby="errors.email ? 'email-error' : undefined"
                 />
-                <InputError class="mt-2" :message="errors.email" />
+                <InputError
+                    id="email-error"
+                    class="mt-2"
+                    :message="errors.email"
+                />
             </div>
 
             <div v-if="page.props.mustVerifyEmail && !user.email_verified_at">
@@ -79,18 +112,19 @@ const user = computed(() => page.props.auth.user);
                     <Link
                         :href="send()"
                         as="button"
-                        class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                        class="text-foreground underline decoration-primary/40 decoration-2 underline-offset-4 transition-colors hover:decoration-primary"
                     >
                         Click here to re-send the verification email.
                     </Link>
                 </p>
 
-                <div
+                <p
                     v-if="page.props.status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-green-600"
+                    role="status"
+                    class="mt-2 text-sm font-medium text-success"
                 >
                     A new verification link has been sent to your email address.
-                </div>
+                </p>
             </div>
 
             <div class="flex items-center gap-4">

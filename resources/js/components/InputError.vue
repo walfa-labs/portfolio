@@ -1,13 +1,19 @@
 <script setup lang="ts">
-defineProps<{
+import { computed, useId } from 'vue';
+
+type Props = {
     message?: string;
-}>();
+    id?: string;
+};
+
+const props = defineProps<Props>();
+
+const fallbackId = `input-error-${useId()}`;
+const errorId = computed(() => props.id ?? fallbackId);
 </script>
 
 <template>
-    <div v-show="message">
-        <p class="text-sm text-red-600 dark:text-red-500">
-            {{ message }}
-        </p>
-    </div>
+    <p v-if="message" :id="errorId" class="text-sm text-destructive">
+        {{ message }}
+    </p>
 </template>

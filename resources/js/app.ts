@@ -1,14 +1,21 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import type { Component, FunctionalComponent, Slots } from 'vue';
-import { h } from 'vue';
+import { createApp, h } from 'vue';
+import RouteAnnouncer from '@/components/a11y/RouteAnnouncer.vue';
 import PrivacyRoot from '@/components/privacy/PrivacyRoot.vue';
 import { initializeTheme } from '@/composables/useAppearance';
+import { useScrollFocusIntoView } from '@/composables/useScrollFocusIntoView';
+import AdminLayout from '@/layouts/AdminLayout.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+// This will set light / dark mode on page load...
+initializeTheme();
 
 /*
  * §3.1.2 / §8.3 — every layout the resolver returns is wrapped, so the consent
@@ -56,35 +63,61 @@ const cspNonce =
         : (window as Window & { __cspNonce?: string }).__cspNonce;
 
 void createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    nonce: cspNonce,
+    title: (title) =>
+        !title
+            ? appName
+            : title.includes(appName)
+              ? title
+              : `${title} - ${appName}`,
+    /*
+     * `public/` gets the public shell; `admin/` gets the sidebar shell plus the
+     * admin content wrapper (§3.1.2, §5.8). `withPrivacy` wraps all five cases,
+     * including the two array cases: §8.3 puts `PrivacyChoicesLink` in
+     * `AppLayout`'s sidebar footer, which renders on `/admin` and `/settings`
+     * too, and an unwrapped array would give a re-open button whose banner can
+     * never render.
+     */
     layout: (name) => {
         switch (true) {
-            case name === 'Welcome':
-                return null;
+            case name.startsWith('public/'):
+                return withPrivacy(PublicLayout);
+            case name.startsWith('admin/'):
+                return [withPrivacy(AppLayout), AdminLayout];
             case name.startsWith('auth/'):
-                return AuthLayout;
+                return withPrivacy(AuthLayout);
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return [withPrivacy(AppLayout), SettingsLayout];
             default:
-                return AppLayout;
+                return withPrivacy(AppLayout);
         }
     },
-    withApp: (app) => {
+    withApp: (app, { ssr }) => {
         app.directive('focus', {
             mounted: (el: HTMLElement, shouldFocus) => {
                 if (shouldFocus.value !== false) {
+                    el.setAttribute('data-programmatic-focus', '');
                     el.focus();
                 }
             },
         });
+
+        if (ssr) {
+            return;
+        }
+
+        createApp(RouteAnnouncer).mount('#route-announcer');
+        useScrollFocusIntoView();
     },
     progress: {
-        color: '#4B5563',
+        // Guarded because the SSR entry evaluates this module in Node, where `document` does not exist.
+        color:
+            typeof document !== 'undefined' &&
+            document.documentElement.classList.contains('dark')
+                ? '#6FD3B4'
+                : '#19594A',
     },
 });
-
-// This will set light / dark mode on page load...
-initializeTheme();
 
 // This will listen for flash toast data from the server...
 initializeFlashToast();

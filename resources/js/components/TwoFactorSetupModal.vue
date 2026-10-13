@@ -18,7 +18,7 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAppearance } from '@/composables/useAppearance';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { confirm } from '@/routes/two-factor';
@@ -114,33 +114,9 @@ watch(
         <DialogContent class="sm:max-w-md">
             <DialogHeader class="flex items-center justify-center">
                 <div
-                    class="mb-3 w-auto rounded-full border border-border bg-card p-0.5 shadow-sm"
+                    class="mx-auto mb-3 flex size-14 items-center justify-center rounded-sm border-2 border-ink bg-muted"
                 >
-                    <div
-                        class="relative overflow-hidden rounded-full border border-border bg-muted p-2.5"
-                    >
-                        <div
-                            class="absolute inset-0 grid grid-cols-5 opacity-50"
-                        >
-                            <div
-                                v-for="i in 5"
-                                :key="`col-${i}`"
-                                class="border-r border-border last:border-r-0"
-                            />
-                        </div>
-                        <div
-                            class="absolute inset-0 grid grid-rows-5 opacity-50"
-                        >
-                            <div
-                                v-for="i in 5"
-                                :key="`row-${i}`"
-                                class="border-b border-border last:border-b-0"
-                            />
-                        </div>
-                        <ScanLine
-                            class="relative z-20 size-6 text-foreground"
-                        />
-                    </div>
+                    <ScanLine class="size-6 text-ink" aria-hidden="true" />
                 </div>
                 <DialogTitle>{{ modalConfig.title }}</DialogTitle>
                 <DialogDescription class="text-center">
@@ -158,17 +134,19 @@ watch(
                             class="relative mx-auto flex max-w-md items-center overflow-hidden"
                         >
                             <div
-                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border border-border"
+                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border-2 border-ink"
                             >
                                 <div
                                     v-if="!qrCodeSvg"
-                                    class="absolute inset-0 z-10 flex aspect-square h-auto w-full animate-pulse items-center justify-center bg-background"
+                                    class="absolute inset-0 z-10 flex aspect-square h-auto w-full items-center justify-center bg-background"
+                                    aria-busy="true"
+                                    aria-live="polite"
                                 >
-                                    <Spinner class="size-6" />
+                                    <Skeleton class="h-full w-full" />
                                 </div>
                                 <div
                                     v-else
-                                    class="relative z-10 overflow-hidden border p-5"
+                                    class="relative z-10 overflow-hidden border-2 border-ink p-5"
                                 >
                                     <div
                                         v-html="qrCodeSvg"
@@ -194,7 +172,7 @@ watch(
                             class="relative flex w-full items-center justify-center"
                         >
                             <div
-                                class="absolute inset-0 top-1/2 h-px w-full bg-border"
+                                class="absolute inset-0 top-1/2 h-[2px] w-full bg-ink"
                             />
                             <span class="relative bg-card px-2 py-1"
                                 >or, enter the code manually</span
@@ -205,30 +183,40 @@ watch(
                             class="flex w-full items-center justify-center space-x-2"
                         >
                             <div
-                                class="flex w-full items-stretch overflow-hidden rounded-xl border border-border"
+                                class="flex w-full items-stretch overflow-hidden rounded-xl border-2 border-ink"
                             >
                                 <div
                                     v-if="!manualSetupKey"
                                     class="flex h-full w-full items-center justify-center bg-muted p-3"
+                                    aria-busy="true"
+                                    aria-live="polite"
                                 >
-                                    <Spinner />
+                                    <Skeleton class="h-4 w-full" />
                                 </div>
                                 <template v-else>
                                     <input
                                         type="text"
                                         readonly
                                         :value="manualSetupKey"
-                                        class="h-full w-full bg-background p-3 text-foreground"
+                                        aria-label="Setup key"
+                                        class="h-full w-full bg-background p-3 font-mono text-meta text-foreground"
                                     />
                                     <button
+                                        type="button"
                                         @click="copy(manualSetupKey || '')"
-                                        class="relative block h-auto border-l border-border px-3 hover:bg-muted"
+                                        aria-label="Copy setup key"
+                                        class="relative block h-auto border-l-2 border-ink px-3 hover:bg-muted"
                                     >
                                         <Check
                                             v-if="copied"
-                                            class="w-4 text-green-500"
+                                            class="size-4 text-success"
+                                            aria-hidden="true"
                                         />
-                                        <Copy v-else class="w-4" />
+                                        <Copy
+                                            v-else
+                                            class="size-4"
+                                            aria-hidden="true"
+                                        />
                                     </button>
                                 </template>
                             </div>
@@ -253,12 +241,19 @@ watch(
                             <div
                                 class="flex w-full flex-col items-center justify-center space-y-3 py-2"
                             >
+                                <label for="otp" class="sr-only"
+                                    >Authentication code</label
+                                >
                                 <InputOTP
                                     id="otp"
                                     v-model="code"
                                     :maxlength="6"
                                     :disabled="processing"
                                     autofocus
+                                    :aria-invalid="Boolean(errors?.code)"
+                                    :aria-describedby="
+                                        errors?.code ? 'otp-error' : undefined
+                                    "
                                 >
                                     <InputOTPGroup>
                                         <InputOTPSlot
@@ -268,7 +263,10 @@ watch(
                                         />
                                     </InputOTPGroup>
                                 </InputOTP>
-                                <InputError :message="errors?.code" />
+                                <InputError
+                                    id="otp-error"
+                                    :message="errors?.code"
+                                />
                             </div>
 
                             <div class="flex w-full items-center space-x-5">

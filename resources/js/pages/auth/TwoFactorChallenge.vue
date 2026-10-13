@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
-import { computed, ref, watchEffect } from 'vue';
+import { computed, nextTick, ref, useTemplateRef, watchEffect } from 'vue';
+import FormErrorSummary from '@/components/FormErrorSummary.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,11 +10,17 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { Label } from '@/components/ui/label';
 import { store } from '@/routes/two-factor/login';
 import type { TwoFactorConfigContent } from '@/types';
 
 const showRecoveryInput = ref<boolean>(false);
 const code = ref<string>('');
+const announcement = ref<string>('');
+
+const otpPanel = useTemplateRef<HTMLElement>('otpPanel');
+const recoveryInput =
+    useTemplateRef<InstanceType<typeof Input>>('recoveryInput');
 
 const authConfigContent = computed<TwoFactorConfigContent>(() => {
     if (showRecoveryInput.value) {
@@ -40,10 +47,28 @@ watchEffect(() => {
     });
 });
 
+const focusFirstField = async (): Promise<void> => {
+    await nextTick();
+
+    if (showRecoveryInput.value) {
+        recoveryInput.value?.$el?.focus();
+
+        return;
+    }
+
+    otpPanel.value?.querySelector<HTMLInputElement>('input')?.focus();
+};
+
 const toggleRecoveryMode = (clearErrors: () => void): void => {
     showRecoveryInput.value = !showRecoveryInput.value;
     clearErrors();
     code.value = '';
+
+    announcement.value = showRecoveryInput.value
+        ? 'Recovery code field shown.'
+        : 'Authentication code field shown.';
+
+    void focusFirstField();
 };
 </script>
 
@@ -51,25 +76,53 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
     <Head title="Two-factor authentication" />
 
     <div class="space-y-6">
+        <p role="status" class="sr-only">{{ announcement }}</p>
+
         <template v-if="!showRecoveryInput">
             <Form
                 v-bind="store.form()"
                 class="space-y-4"
-                reset-on-error
                 @error="code = ''"
                 #default="{ errors, processing, clearErrors }"
             >
+                <FormErrorSummary
+                    :errors="errors"
+                    :ids="{ code: 'otp' }"
+                    :labels="{ code: 'Authentication code' }"
+                />
+
+                <p class="text-meta text-muted-foreground">
+                    Fields marked with an asterisk (*) are required.
+                </p>
+
                 <input type="hidden" name="code" :value="code" />
                 <div
                     class="flex flex-col items-center justify-center space-y-3 text-center"
                 >
-                    <div class="flex w-full items-center justify-center">
+                    <Label for="otp">
+                        <span>
+                            Authentication code
+                            <span aria-hidden="true">*</span>
+                            <span class="sr-only">(required)</span>
+                        </span>
+                    </Label>
+                    <div
+                        ref="otpPanel"
+                        class="flex w-full items-center justify-center"
+                    >
                         <InputOTP
                             id="otp"
                             v-model="code"
                             :maxlength="6"
                             :disabled="processing"
                             autofocus
+                            required
+                            inputmode="numeric"
+                            autocomplete="one-time-code"
+                            :aria-invalid="Boolean(errors.code)"
+                            :aria-describedby="
+                                errors.code ? 'otp-error' : undefined
+                            "
                         >
                             <InputOTPGroup>
                                 <InputOTPSlot
@@ -80,7 +133,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                             </InputOTPGroup>
                         </InputOTP>
                     </div>
-                    <InputError :message="errors.code" />
+                    <InputError id="otp-error" :message="errors.code" />
                 </div>
                 <Button type="submit" class="w-full" :disabled="processing"
                     >Continue</Button
@@ -89,7 +142,8 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                     <span>or you can </span>
                     <button
                         type="button"
-                        class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                        :aria-expanded="showRecoveryInput"
+                        class="text-foreground underline decoration-primary/40 decoration-2 underline-offset-4 transition-colors hover:decoration-primary"
                         @click="() => toggleRecoveryMode(clearErrors)"
                     >
                         {{ authConfigContent.buttonText }}
@@ -102,17 +156,46 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
             <Form
                 v-bind="store.form()"
                 class="space-y-4"
-                reset-on-error
                 #default="{ errors, processing, clearErrors }"
             >
-                <Input
-                    name="recovery_code"
-                    type="text"
-                    placeholder="Enter recovery code"
-                    v-focus
-                    required
+                <FormErrorSummary
+                    :errors="errors"
+                    :labels="{ recovery_code: 'Recovery code' }"
                 />
-                <InputError :message="errors.recovery_code" />
+
+                <p class="text-meta text-muted-foreground">
+                    Fields marked with an asterisk (*) are required.
+                </p>
+
+                <div class="grid gap-2">
+                    <Label for="recovery_code">
+                        <span>
+                            Recovery code
+                            <span aria-hidden="true">*</span>
+                            <span class="sr-only">(required)</span>
+                        </span>
+                    </Label>
+                    <Input
+                        id="recovery_code"
+                        ref="recoveryInput"
+                        name="recovery_code"
+                        type="text"
+                        placeholder="Enter recovery code"
+                        v-focus
+                        required
+                        :aria-invalid="Boolean(errors.recovery_code)"
+                        :aria-describedby="
+                            errors.recovery_code
+                                ? 'recovery-code-error'
+                                : undefined
+                        "
+                    />
+                    <InputError
+                        id="recovery-code-error"
+                        :message="errors.recovery_code"
+                    />
+                </div>
+
                 <Button type="submit" class="w-full" :disabled="processing"
                     >Continue</Button
                 >
@@ -121,7 +204,8 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                     <span>or you can </span>
                     <button
                         type="button"
-                        class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                        :aria-expanded="showRecoveryInput"
+                        class="text-foreground underline decoration-primary/40 decoration-2 underline-offset-4 transition-colors hover:decoration-primary"
                         @click="() => toggleRecoveryMode(clearErrors)"
                     >
                         {{ authConfigContent.buttonText }}

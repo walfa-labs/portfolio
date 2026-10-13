@@ -17,12 +17,13 @@ const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: "offcanvas",
 })
 
-const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+const { isMobile, state, openMobile, setOpenMobile, sidebarId } = useSidebar()
 </script>
 
 <template>
   <div
     v-if="collapsible === 'none'"
+    :id="sidebarId"
     data-slot="sidebar"
     :class="cn('bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col', props.class)"
     v-bind="$attrs"
@@ -32,6 +33,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
   <Sheet v-else-if="isMobile" :open="openMobile" v-bind="$attrs" @update:open="setOpenMobile">
     <SheetContent
+      :id="sidebarId"
       data-sidebar="sidebar"
       data-slot="sidebar"
       data-mobile="true"
@@ -53,6 +55,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
   <div
     v-else
+    :id="sidebarId"
     class="group peer text-sidebar-foreground hidden md:block"
     data-slot="sidebar"
     :data-state="state"
@@ -87,7 +90,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
     >
       <div
         data-sidebar="sidebar"
-        class="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+        class="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border"
       >
         <slot />
       </div>

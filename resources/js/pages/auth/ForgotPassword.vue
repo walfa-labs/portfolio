@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import FormErrorSummary from '@/components/FormErrorSummary.vue';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -24,26 +25,45 @@ defineProps<{
 <template>
     <Head title="Forgot password" />
 
-    <div
+    <p
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        role="status"
+        class="mb-4 text-center text-sm font-medium text-success"
     >
         {{ status }}
-    </div>
+    </p>
 
     <div class="space-y-6">
         <Form v-bind="email.form()" v-slot="{ errors, processing }">
+            <FormErrorSummary
+                :errors="errors"
+                :labels="{ email: 'Email address' }"
+            />
+
+            <p class="mb-6 text-meta text-muted-foreground">
+                Fields marked with an asterisk (*) are required.
+            </p>
+
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">
+                    <span>
+                        Email address
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
                 <Input
                     id="email"
                     type="email"
                     name="email"
-                    autocomplete="off"
+                    required
+                    autocomplete="email"
                     v-focus
                     placeholder="email@example.com"
+                    :aria-invalid="Boolean(errors.email)"
+                    :aria-describedby="errors.email ? 'email-error' : undefined"
                 />
-                <InputError :message="errors.email" />
+                <InputError id="email-error" :message="errors.email" />
             </div>
 
             <div class="my-6 flex items-center justify-start">

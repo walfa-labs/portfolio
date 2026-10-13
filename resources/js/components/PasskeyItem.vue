@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { KeyRound, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -32,27 +33,29 @@ const handleDelete = () => {
 </script>
 
 <template>
-    <div class="flex items-center justify-between border-b p-4 last:border-b-0">
+    <div
+        class="flex items-center justify-between border-b-hairline border-ink p-4 last:border-b-0"
+    >
         <div class="flex items-center gap-4">
             <div
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted"
+                class="flex size-10 shrink-0 items-center justify-center rounded-sm border-2 border-ink bg-muted"
             >
-                <KeyRound class="h-5 w-5 text-muted-foreground" />
+                <KeyRound
+                    class="size-5 text-muted-foreground"
+                    aria-hidden="true"
+                />
             </div>
             <div class="space-y-1">
                 <div class="flex items-center gap-2.5">
                     <p class="font-medium tracking-tight">{{ passkey.name }}</p>
-                    <span
-                        v-if="passkey.authenticator"
-                        class="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase ring-1 ring-border ring-inset"
-                    >
+                    <Badge v-if="passkey.authenticator" variant="outline">
                         {{ passkey.authenticator }}
-                    </span>
+                    </Badge>
                 </div>
                 <p class="text-sm text-muted-foreground">
                     Added {{ passkey.created_at_diff }}
                     <template v-if="passkey.last_used_at_diff">
-                        <span class="mx-1 text-muted-foreground/50">/</span>
+                        <span class="mx-1 text-muted-foreground">/</span>
                         Last used {{ passkey.last_used_at_diff }}
                     </template>
                 </p>
@@ -66,7 +69,7 @@ const handleDelete = () => {
                     size="sm"
                     class="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
-                    <Trash2 class="h-4 w-4" />
+                    <Trash2 class="size-4" aria-hidden="true" />
                     <span class="sr-only">Remove</span>
                 </Button>
             </DialogTrigger>

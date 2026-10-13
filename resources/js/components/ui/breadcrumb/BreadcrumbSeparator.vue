@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import type { HTMLAttributes } from "vue"
-import { ChevronRight } from "@lucide/vue"
 import { cn } from "@/lib/utils"
 
 const props = defineProps<{
@@ -13,10 +12,8 @@ const props = defineProps<{
     data-slot="breadcrumb-separator"
     role="presentation"
     aria-hidden="true"
-    :class="cn('[&>svg]:size-3.5', props.class)"
+    :class="cn('font-mono text-muted-foreground', props.class)"
   >
-    <slot>
-      <ChevronRight />
-    </slot>
+    <slot>/</slot>
   </li>
 </template>

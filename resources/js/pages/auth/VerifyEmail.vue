@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import FormErrorSummary from '@/components/FormErrorSummary.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -22,19 +23,22 @@ defineProps<{
 <template>
     <Head title="Email verification" />
 
-    <div
+    <p
         v-if="status === 'verification-link-sent'"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        role="status"
+        class="mb-4 text-center text-sm font-medium text-success"
     >
         A new verification link has been sent to the email address you provided
         during registration.
-    </div>
+    </p>
 
     <Form
         v-bind="send.form()"
         class="space-y-6 text-center"
-        v-slot="{ processing }"
+        v-slot="{ errors, processing }"
     >
+        <FormErrorSummary class="text-left" :errors="errors" />
+
         <Button :disabled="processing" variant="secondary">
             <Spinner v-if="processing" />
             Resend verification email

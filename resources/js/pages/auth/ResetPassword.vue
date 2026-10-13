@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import FormErrorSummary from '@/components/FormErrorSummary.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,40 @@ const props = defineProps<{
 }>();
 
 const inputEmail = ref(props.email);
+
+const passwordRulesText = computed((): string => {
+    const requirements: string[] = [];
+    const minLength = /minlength:\s*(\d+)/.exec(props.passwordRules)?.[1];
+
+    if (minLength) {
+        requirements.push(`at least ${minLength} characters`);
+    }
+
+    if (props.passwordRules.includes('required: lower')) {
+        requirements.push('a lowercase letter');
+    }
+
+    if (props.passwordRules.includes('required: upper')) {
+        requirements.push('an uppercase letter');
+    }
+
+    if (props.passwordRules.includes('required: digit')) {
+        requirements.push('a number');
+    }
+
+    if (props.passwordRules.includes('required: special')) {
+        requirements.push('a symbol');
+    }
+
+    return requirements.length > 0
+        ? `Your new password must contain ${requirements.join(', ')}.`
+        : 'Choose a strong password you do not use anywhere else.';
+});
+
+const passwordDescribedBy = (field: string, error?: string): string =>
+    ['password-rules', error ? `${field}-error` : undefined]
+        .filter(Boolean)
+        .join(' ');
 </script>
 
 <template>
@@ -35,6 +70,19 @@ const inputEmail = ref(props.email);
         v-slot="{ errors, processing }"
     >
         <div class="grid gap-6">
+            <FormErrorSummary
+                :errors="errors"
+                :labels="{
+                    email: 'Email address',
+                    password: 'Password',
+                    password_confirmation: 'Confirm password',
+                }"
+            />
+
+            <p class="text-meta text-muted-foreground">
+                Fields marked with an asterisk (*) are required.
+            </p>
+
             <div class="grid gap-2">
                 <Label for="email">Email</Label>
                 <Input
@@ -45,35 +93,68 @@ const inputEmail = ref(props.email);
                     v-model="inputEmail"
                     class="mt-1 block w-full"
                     readonly
+                    :aria-invalid="Boolean(errors.email)"
+                    :aria-describedby="errors.email ? 'email-error' : undefined"
                 />
-                <InputError :message="errors.email" class="mt-2" />
+                <InputError id="email-error" :message="errors.email" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Password</Label>
+                <Label for="password">
+                    <span>
+                        Password
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
+                <p id="password-rules" class="text-meta text-muted-foreground">
+                    {{ passwordRulesText }}
+                </p>
                 <PasswordInput
                     id="password"
                     name="password"
+                    required
                     autocomplete="new-password"
                     class="mt-1 block w-full"
                     autofocus
                     placeholder="Password"
                     :passwordrules="passwordRules"
+                    :aria-invalid="Boolean(errors.password)"
+                    :aria-describedby="
+                        passwordDescribedBy('password', errors.password)
+                    "
                 />
-                <InputError :message="errors.password" />
+                <InputError id="password-error" :message="errors.password" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation"> Confirm password </Label>
+                <Label for="password_confirmation">
+                    <span>
+                        Confirm password
+                        <span aria-hidden="true">*</span>
+                        <span class="sr-only">(required)</span>
+                    </span>
+                </Label>
                 <PasswordInput
                     id="password_confirmation"
                     name="password_confirmation"
+                    required
                     autocomplete="new-password"
                     class="mt-1 block w-full"
                     placeholder="Confirm password"
                     :passwordrules="passwordRules"
+                    :aria-invalid="Boolean(errors.password_confirmation)"
+                    :aria-describedby="
+                        passwordDescribedBy(
+                            'password_confirmation',
+                            errors.password_confirmation,
+                        )
+                    "
                 />
-                <InputError :message="errors.password_confirmation" />
+                <InputError
+                    id="password_confirmation-error"
+                    :message="errors.password_confirmation"
+                />
             </div>
 
             <Button

@@ -29,9 +29,9 @@ const passwordInput = useTemplateRef('passwordInput');
             description="Delete your account and all of its resources"
         />
         <div
-            class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
+            class="space-y-4 rounded-lg border-2 border-destructive bg-destructive/10 p-4 text-destructive"
         >
-            <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
+            <div class="relative space-y-0.5">
                 <p class="font-medium">Warning</p>
                 <p class="text-sm">
                     Please proceed with caution, this cannot be undone.
@@ -77,8 +77,17 @@ const passwordInput = useTemplateRef('passwordInput');
                                 name="password"
                                 ref="passwordInput"
                                 placeholder="Password"
+                                :aria-invalid="Boolean(errors.password)"
+                                :aria-describedby="
+                                    errors.password
+                                        ? 'delete-account-password-error'
+                                        : undefined
+                                "
                             />
-                            <InputError :message="errors.password" />
+                            <InputError
+                                id="delete-account-password-error"
+                                :message="errors.password"
+                            />
                         </div>
 
                         <DialogFooter class="gap-2">

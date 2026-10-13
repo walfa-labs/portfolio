@@ -9,13 +9,54 @@
 
 @theme inline {
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        'Public Sans', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-display:
+        'Bricolage Grotesque', 'Public Sans', ui-sans-serif, system-ui,
+        sans-serif;
+    --font-mono:
+        'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
+    /* Bare `border`, `border-b`, `divide-x/y` become 2px — the resting structural edge. */
+    --default-border-width: 2px;
+    --border-width-hairline: 1px; /* internal rules only */
+    --border-width-3: 3px; /* emphasis surfaces */
+
+    --radius-xs: 0px;
+    --radius-sm: 2px;
+    --radius-md: 3px;
+    --radius-lg: 4px;
+    --radius-xl: 4px;
+    --radius-2xl: 6px;
+    --radius-3xl: 8px;
+    --radius-4xl: 10px;
+
+    --shadow-hard-sm: 2px 2px 0 0 var(--nb-shadow); /* resting interactive */
+    --shadow-hard: 4px 4px 0 0 var(--nb-shadow); /* hovered interactive, popovers */
+    --shadow-hard-lg: 6px 6px 0 0 var(--nb-shadow); /* dialogs, sheets, hero slab */
+    --shadow-hard-xl: 10px 10px 0 0 var(--nb-shadow); /* the single featured slab */
+
+    --text-label: 0.6875rem;
+    --text-label--line-height: 1.2;
+    --text-meta: 0.8125rem;
+    --text-meta--line-height: 1.45;
+    --text-lead: 1.125rem;
+    --text-lead--line-height: 1.6;
+    --text-title: 1.75rem;
+    --text-title--line-height: 1.1;
+    --text-display: clamp(2.5rem, 6vw, 4.5rem);
+    --text-display--line-height: 0.95;
+    --text-numeral: clamp(4rem, 14vw, 10rem);
+    --text-numeral--line-height: 0.85;
+
+    --default-transition-duration: 150ms;
+    --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+
+    --z-index-base: 0;
+    --z-index-sticky: 30;
+    --z-index-overlay: 40;
+    --z-index-modal: 50;
+    --z-index-toast: 60;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -51,6 +92,8 @@
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
 
+    /* `--sidebar` is deliberately left unconsumed: the sidebar surfaces read
+       `--sidebar-background`/`--sidebar-accent`. Both tokens stay defined. */
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -59,107 +102,148 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
-}
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
-    }
-}
-
-@layer utilities {
-    body,
-    html {
-        --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-            'Noto Color Emoji';
-    }
+    /* Neobrutalist additions — the `--nb-*` layer plus the a11y aliases. */
+    --color-ink: var(--nb-ink);
+    --color-primary-hover: var(--primary-hover);
+    --color-destructive-hover: var(--destructive-hover);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-info: var(--info);
+    --color-tone-neutral: var(--tone-neutral);
+    --color-tone-viridian: var(--tone-viridian);
+    --color-tone-sky: var(--tone-sky);
+    --color-tone-marigold: var(--tone-marigold);
+    --color-tone-violet: var(--tone-violet);
+    --color-tone-vermilion: var(--tone-vermilion);
+    --color-tone-rose: var(--tone-rose);
+    --color-tone-leaf: var(--tone-leaf);
+    --color-border-strong: var(--border);
+    --color-ring-focus: var(--ring);
 }
 
 :root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+    /* Structural primitives */
+    --nb-ink: #12110d;
+    --nb-shadow: #12110d;
+    --nb-offset-x: 4px;
+    --nb-offset-y: 4px;
+
+    /* Semantic tokens */
+    --background: #f4f1e7;
+    --foreground: #12110d;
+    --card: #ffffff;
+    --card-foreground: #12110d;
+    --popover: #ffffff;
+    --popover-foreground: #12110d;
+    --primary: #19594a;
+    --primary-foreground: #ffffff;
+    --primary-hover: #10453a;
+    --secondary: #e8e3d5;
+    --secondary-foreground: #12110d;
+    --muted: #e8e3d5;
+    --muted-foreground: #4a463c;
+    --accent: #d7e7e0;
+    --accent-foreground: #12110d;
+    --destructive: #b3261e;
+    --destructive-foreground: #ffffff;
+    --destructive-hover: #8e1d17;
+    --border: #12110d;
+    --input: #12110d;
+    --ring: #19594a;
+    --chart-1: #19594a;
+    --chart-2: #0072b2;
+    --chart-3: #d55e00;
+    --chart-4: #e69f00;
+    --chart-5: #009e73;
+    --sidebar-background: #f4f1e7;
+    --sidebar-foreground: #12110d;
+    --sidebar-primary: #19594a;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e8e3d5;
+    --sidebar-accent-foreground: #12110d;
+    --sidebar-border: #12110d;
+    --sidebar-ring: #19594a;
+    --sidebar: #e8e3d5;
+
+    /* Tone and status tokens */
+    --tone-neutral: #e8e3d5;
+    --tone-viridian: #c9e8de;
+    --tone-sky: #d6e4f7;
+    --tone-marigold: #f7e4b8;
+    --tone-violet: #e2dbf2;
+    --tone-vermilion: #f9d8c6;
+    --tone-rose: #f6d9e4;
+    --tone-leaf: #d9edc7;
+    --success: #0e6b3f;
+    --warning: #7a5300;
+    --info: #0072b2;
+
+    /* Sticky header height, consumed by the `scroll-margin-top` rules below
+       (§7.2). The topbar is `h-16` plus its 2px bottom rule, so the token
+       tracks both rather than only the box. */
+    --sticky-header-h: calc(4rem + 2px);
+
+    /* Consumed only by ui/sonner/Sonner.vue. */
+    --radius: 0.25rem;
 }
 
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    /* Structural primitives */
+    --nb-ink: #f2efe4;
+    --nb-shadow: #f2efe4;
+    --nb-offset-x: 4px;
+    --nb-offset-y: 4px;
+
+    /* Semantic tokens */
+    --background: #17150f;
+    --foreground: #f2efe4;
+    --card: #221f17;
+    --card-foreground: #f2efe4;
+    --popover: #221f17;
+    --popover-foreground: #f2efe4;
+    --primary: #6fd3b4;
+    --primary-foreground: #17150f;
+    --primary-hover: #8ce0c5;
+    --secondary: #2c2820;
+    --secondary-foreground: #f2efe4;
+    --muted: #2c2820;
+    --muted-foreground: #c3bdae;
+    --accent: #1d3a33;
+    --accent-foreground: #6fd3b4;
+    --destructive: #ff8a80;
+    --destructive-foreground: #17150f;
+    --destructive-hover: #ffb0a8;
+    --border: #f2efe4;
+    --input: #f2efe4;
+    --ring: #6fd3b4;
+    --chart-1: #6fd3b4;
+    --chart-2: #56b4e9;
+    --chart-3: #ff8a65;
+    --chart-4: #f0c36b;
+    --chart-5: #6ee7a8;
+    --sidebar-background: #17150f;
+    --sidebar-foreground: #f2efe4;
+    --sidebar-primary: #6fd3b4;
+    --sidebar-primary-foreground: #17150f;
+    --sidebar-accent: #2c2820;
+    --sidebar-accent-foreground: #f2efe4;
+    --sidebar-border: #f2efe4;
+    --sidebar-ring: #6fd3b4;
+    --sidebar: #221f17;
+
+    /* Tone and status tokens */
+    --tone-neutral: #2c2820;
+    --tone-viridian: #1c3a33;
+    --tone-sky: #1b2e45;
+    --tone-marigold: #3a2f14;
+    --tone-violet: #2c2540;
+    --tone-vermilion: #3d2519;
+    --tone-rose: #3a2029;
+    --tone-leaf: #22331a;
+    --success: #6ee7a8;
+    --warning: #f0c36b;
+    --info: #56b4e9;
 }
 
 @layer base {
@@ -167,6 +251,127 @@
         @apply border-border outline-ring/50;
     }
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background font-sans text-foreground antialiased;
+    }
+
+    /* §7.5(2) — every focusable element has an indicator by default, so a
+       component that forgets to opt in is still safe. */
+    :where(
+        a,
+        button,
+        input,
+        select,
+        textarea,
+        summary,
+        [tabindex]
+    ):focus-visible {
+        outline: 2px solid var(--color-ring-focus);
+        outline-offset: 2px;
+        border-radius: inherit;
+    }
+    .nb-shadow:focus-visible {
+        outline-offset: 4px;
+    }
+    #main-content:focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    /* §7.2 (2.4.11) — a sticky header must not obscure the focused element. */
+    main :where(a, button, input, select, textarea, summary, [tabindex]) {
+        scroll-margin-top: var(--sticky-header-h);
+    }
+
+    /* The skip link's own target: without this the fragment jump parks the top
+       of `<main>` — the breadcrumb trail — under the sticky topbar. */
+    #main-content {
+        scroll-margin-top: var(--sticky-header-h);
+    }
+}
+
+/*
+  The rules above live in `@layer base`, and Tailwind's `outline-hidden` utility — which every retokenised
+  cva string applies to buttons, badges, inputs, checkboxes, selects and navigation-menu triggers — declares
+  `outline-style: none` in the `utilities` layer. Layer precedence outranks specificity, so the base rule is
+  cancelled on exactly the controls that need it. These two rules repeat the same declarations outside every
+  layer, which puts them above the utilities layer; `:where()` keeps zero specificity so components can still
+  override the indicator deliberately.
+*/
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ring-focus);
+    outline-offset: 2px;
+    border-radius: inherit;
+}
+.nb-shadow:focus-visible {
+    outline-offset: 4px;
+}
+
+/*
+  The pre-paint `<style>` in app.blade.php still hardcodes the starter kit's `oklch(1 0 0)` / `oklch(0.145 0 0)`,
+  and an unlayered inline style outranks `@layer base`. Declared outside every layer, and later in the document
+  than that `<style>`, this wins once the stylesheet has loaded — so the page background is `--background` in both
+  themes even before its owner updates the inline block (§6.2.4).
+*/
+html {
+    background-color: var(--background);
+}
+
+/*
+  `--color-border-strong` generates `border-border-strong` (the name §7.12 uses for the skip link), because
+  the utility is always `border-<colour-name>`. Decision 3 also names a `border-strong` utility, so it is
+  defined explicitly here — an unknown utility in Tailwind v4 renders nothing at all, and the two call sites
+  must not disagree about which spelling works.
+*/
+@utility border-strong {
+    border-color: var(--border);
+}
+
+/* §7.12 — skip link. Styled here so the Blade shell only carries the class name. */
+@utility skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:border-2 focus:border-border-strong focus:bg-background focus:px-4 focus:py-2 focus:text-foreground;
+}
+
+/* vue-sonner only exposes `--normal-*` variables and ships its own blurred drop shadow on
+   `[data-sonner-toast][data-styled='true']` from a lazily-loaded stylesheet, which outranks the bare
+   attribute selector on both specificity and document order. The PRD's declarations are therefore marked
+   important so the hard shadow actually paints. */
+[data-sonner-toast] {
+    border-width: 2px !important;
+    border-color: var(--nb-ink) !important;
+    box-shadow: 4px 4px 0 0 var(--nb-shadow) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    /* The lift is motion: keep the instant shadow/colour change, drop the translation. */
+    [data-slot='button']:hover,
+    [data-slot='button']:active,
+    [data-slot='link-card']:hover,
+    [data-slot='link-card']:active,
+    [data-slot='badge']:hover,
+    [data-slot='badge']:active {
+        translate: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    [data-slot='article-lede'] {
+        animation: nb-fade-up 300ms cubic-bezier(0.2, 0, 0, 1) both;
+    }
+    @keyframes nb-fade-up {
+        from {
+            opacity: 0;
+            translate: 0 8px;
+        }
+        to {
+            opacity: 1;
+            translate: 0 0;
+        }
     }
 }

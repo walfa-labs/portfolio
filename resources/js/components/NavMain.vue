@@ -47,19 +47,36 @@ const isCurrentPage = (item: NavItem): boolean => isCurrentUrl(item.href);
 <template>
     <SidebarGroup class="px-2 py-0">
         <SidebarGroupLabel v-if="label">{{ label }}</SidebarGroupLabel>
-        <SidebarMenu>
-            <SidebarMenuItem v-for="item in items" :key="item.title">
-                <SidebarMenuButton
-                    as-child
-                    :is-active="toUrl(item.href) === activeHref"
-                    :tooltip="item.title"
-                >
-                    <Link :href="item.href">
-                        <component :is="item.icon" />
-                        <span>{{ item.title }}</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-        </SidebarMenu>
+        <nav aria-label="Main">
+            <SidebarMenu>
+                <SidebarMenuItem v-for="item in items" :key="item.title">
+                    <!--
+                        §7.1 adopts 2.5.5 (Enhanced) at 44×44 CSS px for primary
+                        nav, and this `<nav aria-label="Main">` is the admin
+                        shell's primary nav — the same floor `PublicHeader.vue`
+                        meets with `min-h-11`. The cva's own 32 px `h-8` is a
+                        height, so `min-height` wins; the collapsed rail is only
+                        48 px wide with 8 px of group padding, so there the item
+                        stays the square `size-9` the rail can hold.
+                    -->
+                    <SidebarMenuButton
+                        as-child
+                        class="min-h-11 group-data-[collapsible=icon]:min-h-9!"
+                        :is-active="toUrl(item.href) === activeHref"
+                        :tooltip="item.title"
+                    >
+                        <Link
+                            :href="item.href"
+                            :aria-current="
+                                isCurrentPage(item) ? 'page' : undefined
+                            "
+                        >
+                            <component :is="item.icon" />
+                            <span>{{ item.title }}</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        </nav>
     </SidebarGroup>
 </template>

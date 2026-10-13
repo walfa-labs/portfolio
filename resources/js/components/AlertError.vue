@@ -16,8 +16,8 @@ const uniqueErrors = computed(() => Array.from(new Set(props.errors)));
 </script>
 
 <template>
-    <Alert variant="destructive">
-        <AlertCircle class="size-4" />
+    <Alert variant="destructive" role="alert">
+        <AlertCircle class="size-4" aria-hidden="true" />
         <AlertTitle>{{ title }}</AlertTitle>
         <AlertDescription>
             <ul class="list-inside list-disc text-sm">

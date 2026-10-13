@@ -71,7 +71,7 @@ const handleCancel = () => {
     <form
         v-else
         @submit="handleSubmit"
-        class="space-y-4 rounded-lg border border-border bg-muted/50 p-4"
+        class="space-y-4 rounded-md border-2 border-ink bg-muted p-4"
     >
         <div class="grid gap-2">
             <Label for="passkey-name">Passkey name</Label>
@@ -80,15 +80,21 @@ const handleCancel = () => {
                 type="text"
                 v-model="name"
                 placeholder="e.g., MacBook Pro, iPhone"
-                class="mt-1 block w-full border-foreground/20"
+                class="mt-1 block w-full"
+                :aria-invalid="Boolean(error)"
+                :aria-describedby="
+                    error
+                        ? 'passkey-name-help passkey-name-error'
+                        : 'passkey-name-help'
+                "
                 v-focus
             />
-            <p class="text-xs text-muted-foreground">
+            <p id="passkey-name-help" class="text-xs text-muted-foreground">
                 A name helps you identify this passkey later.
             </p>
         </div>
 
-        <InputError v-if="error" :message="error" />
+        <InputError v-if="error" id="passkey-name-error" :message="error" />
 
         <div class="flex gap-2">
             <Button type="submit" :disabled="isLoading || !name.trim()">

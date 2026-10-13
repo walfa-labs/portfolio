@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { setLucideProps } from '@lucide/vue';
 import { usePage } from '@inertiajs/vue3';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import type { AppVariant } from '@/types';
@@ -10,6 +11,8 @@ type Props = {
 withDefaults(defineProps<Props>(), {
     variant: 'sidebar',
 });
+
+setLucideProps({ strokeWidth: 2.5 });
 
 const isOpen = usePage().props.sidebarOpen;
 </script>

@@ -44,9 +44,10 @@ const { verify, isLoading, error, isSupported } = usePasskeyVerify({
                 class="w-full"
                 @click="verify"
                 :disabled="isLoading"
+                :aria-describedby="error ? 'passkey-verify-error' : undefined"
             >
                 <Spinner v-if="isLoading" />
-                <KeyRound v-else class="h-4 w-4" />
+                <KeyRound v-else class="size-4" aria-hidden="true" />
                 {{
                     isLoading
                         ? (props.loadingLabel ?? 'Authenticating...')
@@ -55,7 +56,7 @@ const { verify, isLoading, error, isSupported } = usePasskeyVerify({
             </Button>
 
             <div v-if="error" class="text-center">
-                <InputError :message="error" />
+                <InputError id="passkey-verify-error" :message="error" />
             </div>
         </div>
 

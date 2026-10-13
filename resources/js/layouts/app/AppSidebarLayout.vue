@@ -28,7 +28,16 @@ withDefaults(defineProps<Props>(), {
     <AppShell variant="sidebar">
         <AppSidebar />
         <AppContent variant="sidebar" class="min-w-0 overflow-x-clip">
-            <AppSidebarHeader :breadcrumbs="breadcrumbs" />
+            <!--
+                §7.2 (2.5.8) — a crumb link is an interactive target, and
+                `BreadcrumbLink`'s `<a>` is text-height on its own. `PublicLayout`
+                pads its trail to the 24×24 floor with the same `[&_a]` rules;
+                this is that fix for the admin and settings shells.
+            -->
+            <AppSidebarHeader
+                :breadcrumbs="breadcrumbs"
+                class="[&_a]:inline-flex [&_a]:min-h-6 [&_a]:items-center"
+            />
             <slot />
 
             <!--

@@ -14,7 +14,7 @@ const delegatedProps = reactiveOmit(props, "class")
   <AvatarFallback
     data-slot="avatar-fallback"
     v-bind="delegatedProps"
-    :class="cn('bg-muted flex size-full items-center justify-center rounded-full', props.class)"
+    :class="cn('flex size-full items-center justify-center rounded-full border-2 border-ink bg-secondary', props.class)"
   >
     <slot />
   </AvatarFallback>
