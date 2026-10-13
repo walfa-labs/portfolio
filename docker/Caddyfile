@@ -1,0 +1,19 @@
+{
+	admin localhost:2019
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+localhost {
+	root * /app/public
+	encode zstd br gzip
+	php_server {
+		try_files {path} index.php
+	}
+	handle {
+		@vite path /resources/* /@vite/* /@fs/* /@id/* /node_modules/* /vite-hmr
+		reverse_proxy @vite http://host.docker.internal:5173
+	}
+	file_server
+}

@@ -1,0 +1,236 @@
+name: portfolio
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: portfolio-app:dev
+    restart: unless-stopped
+    # frankenphp run exits 1 when exec'd directly as the container's main
+    # process in this image; the sh -c exec wrapper is the working invocation.
+    command: ["sh", "-c", "exec frankenphp run --config /etc/frankenphp/Caddyfile --adapter caddyfile"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./:/app
+      - caddy_data:/data
+      - caddy_config:/config
+      # The SSR bundle the ssr service builds; the app's Inertia SSR dispatch
+      # is gated on this exact path existing (Inertia\Ssr\BundleDetector).
+      - ssr_bundle:/app/bootstrap/ssr
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment: &stack
+      APP_URL: https://localhost
+      APP_KEY: base64:htDIdqlhZKVfTynJfZ0eD6DGxNnY8bNQ4Na+ehJupFk=
+      DB_CONNECTION: mysql
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_DATABASE: portfolio
+      DB_USERNAME: portfolio
+      DB_PASSWORD: 7e1ba308c907bf962610e6197ffb3ce664f5367ef91c2ddc
+      DB_CHARSET: utf8mb4
+      DB_COLLATION: utf8mb4_unicode_ci
+      SESSION_DRIVER: redis
+      SESSION_ENCRYPT: "true"
+      SESSION_COOKIE: laravel-session
+      SESSION_SECURE_COOKIE: "true"
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: valkey
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "null"
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: "1025"
+      MAIL_FROM_ADDRESS: hello@portfolio.test
+      MAIL_FROM_NAME: "${APP_NAME}"
+      FILESYSTEM_DISK: s3
+      AWS_ACCESS_KEY_ID: GK453738c314175364870fa8347a2a1fb9
+      AWS_SECRET_ACCESS_KEY: 6e95bc05d889bb1d32b0780299c2658b98c28a30e23b1fa6887ecb263dce2a73
+      AWS_DEFAULT_REGION: garage
+      AWS_BUCKET: portfolio-media
+      AWS_ENDPOINT: http://garage:3900
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      AWS_PRIVATE_ENDPOINT: http://garage:3900
+      AWS_PRIVATE_BUCKET: portfolio-private
+      AUTH_PASSWORD_TIMEOUT: "900"
+      ADMIN_EMAIL: admin@portfolio.test
+      ADMIN_NAME: Administrator
+      ANALYTICS_ENABLED: "false"
+      ADS_ENABLED: "false"
+      CLARITY_PROJECT_ID: ""
+      ADSENSE_CLIENT: ""
+      ADSENSE_SLOT: ""
+      CONSENT_POLICY_VERSION: "1"
+      CONTACT_EMAIL: ""
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fk https://localhost/ -o /dev/null"]
+      interval: 30s
+      # ./:/app is a Docker Desktop 9p bind mount of E:\ — every stat() costs
+      # ~6 ms and a Laravel boot performs ~620 of them, so a full HTTPS
+      # response takes 8.8–11.5 s under normal load (measured by browser
+      # sweep; the ssr service, which runs on the image filesystem, boots in
+      # 233 ms). The old 10 s timeout aborted at the same moment the
+      # response completed, so the container reported unhealthy while
+      # serving 200s. 20 s leaves ~8.5 s headroom over the worst observed
+      # response and also covers the colder first boot after a recreate.
+      timeout: 20s
+      retries: 5
+      # Probes that fail inside this window (Caddy still booting, opcache
+      # cold) do not count against retries; the first success marks the
+      # container healthy. 90 s covers the first probe (~interval after
+      # start) plus a slow response with margin.
+      start_period: 90s
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    networks:
+      - backend
+    tty: true
+
+  worker:
+    image: portfolio-app:dev
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--queue=media", "--sleep=3", "--tries=3", "--timeout=300"]
+    volumes:
+      - ./:/app
+    environment: *stack
+    # The image's inherited HEALTHCHECK (Caddy admin :2019/metrics) is
+    # meaningless here: the worker runs no HTTP server. This check proves the
+    # worker can reach the queue store, which is its whole job.
+    healthcheck:
+      test: ["CMD-SHELL", "php -r '$$c=@fsockopen(\"valkey\",6379,$$e,$$s,1);exit($$c?0:1);'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      app:
+        condition: service_started
+      valkey:
+        condition: service_healthy
+    networks:
+      - backend
+
+  ssr:
+    image: portfolio-app:dev
+    restart: unless-stopped
+    # Shares the app network namespace so the app's hardcoded
+    # config('inertia.ssr.url') = http://127.0.0.1:13714 reaches this server.
+    # Runs from image code (no bind mount) so npm ci's Linux node_modules
+    # are not shadowed by the host's Windows ones.
+    network_mode: "service:app"
+    command: ["sh", "-c", "npm run build:ssr && exec node bootstrap/ssr/app.js"]
+    environment: *stack
+    volumes:
+      # The bundle is built here and shared with the app container, whose
+      # Inertia SSR dispatch is gated on bootstrap/ssr/app.js existing.
+      - ssr_bundle:/app/bootstrap/ssr
+    healthcheck:
+      # Asserts the whole invariant of the shared namespace, not just that a
+      # process runs: the SSR server answers /health on 127.0.0.1:13714
+      # (the address the app is hardcoded to reach) AND the app's TLS
+      # listener answers on 127.0.0.1:443 in this same namespace. After a
+      # recreate, Docker Desktop can leave this container attached to a
+      # stale, dead app namespace — the old check passed there because node
+      # listens on 13714 in whatever namespace it happens to be in, so ssr
+      # reported healthy while every page silently fell back to client-side
+      # rendering. The 443 assertion fails in that state, making the
+      # breakage visible in `docker compose ps` instead of silent.
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:13714/health -o /dev/null && node -e \"const s=require('net').connect(443,'127.0.0.1');s.setTimeout(2000);s.on('connect',()=>{s.end();process.exit(0)});s.on('timeout',()=>{s.destroy();process.exit(1)});s.on('error',()=>process.exit(1));\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 240s
+    depends_on:
+      app:
+        # Not just "started": ssr joins the app's network namespace, so it
+        # must only attach once the app's TLS listener actually exists.
+        condition: service_healthy
+
+  mariadb:
+    image: mariadb:11.8.9
+    command: ["mariadbd", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_DATABASE: portfolio
+      MYSQL_USER: portfolio
+      MYSQL_PASSWORD: 7e1ba308c907bf962610e6197ffb3ce664f5367ef91c2ddc
+      MYSQL_ROOT_PASSWORD: 3c35e9fde11095f82c873c108b85bf903234b9a7145cc88d
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --su-mysql --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - backend
+
+  valkey:
+    image: valkey/valkey:9.1.2-alpine3.24
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - backend
+
+  garage:
+    image: dxflrs/garage:v2.4.1
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: GK453738c314175364870fa8347a2a1fb9
+      GARAGE_DEFAULT_SECRET_KEY: 6e95bc05d889bb1d32b0780299c2658b98c28a30e23b1fa6887ecb263dce2a73
+      GARAGE_DEFAULT_BUCKET: portfolio-media
+    volumes:
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+      - garage_meta:/metadata
+      - garage_data:/data
+    ports:
+      - "3900:3900"
+    healthcheck:
+      test: ["CMD", "/garage", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    networks:
+      - backend
+
+  mailpit:
+    image: axllent/mailpit:v1.31.5
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  mariadb_data:
+  valkey_data:
+  garage_meta:
+  garage_data:
+  ssr_bundle:
