@@ -1,5 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import { computed, onMounted, ref } from 'vue';
+import { storageAllowed } from '@/composables/useConsent';
 import type { Appearance, ResolvedAppearance } from '@/types';
 
 export type { Appearance, ResolvedAppearance };
@@ -107,11 +108,19 @@ export function useAppearance(): UseAppearanceReturn {
     function updateAppearance(value: Appearance) {
         appearance.value = value;
 
-        // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', value);
+        /*
+         * §8.1 — `appearance` is a non-essential preference, so nothing is
+         * written while a Do Not Track or Global Privacy Control signal is
+         * present. The theme still applies for this session; it simply does not
+         * persist.
+         */
+        if (storageAllowed()) {
+            // Store in localStorage for client-side persistence...
+            localStorage.setItem('appearance', value);
 
-        // Store in cookie for SSR...
-        setCookie('appearance', value);
+            // Store in cookie for SSR...
+            setCookie('appearance', value);
+        }
 
         updateTheme(value);
     }

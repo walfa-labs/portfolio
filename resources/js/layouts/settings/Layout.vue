@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
@@ -29,11 +28,21 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <div class="px-4 py-6">
-        <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
-        />
+    <!--
+        §8.4 item 4 — every `settings/*` page is masked: name, email address,
+        passkey and two-factor material all live here, and Strict mode masks the
+        page by default, so this is the explicit statement of that rule rather
+        than a second mechanism.
+    -->
+    <div class="px-4 py-6" data-clarity-mask="true">
+        <header class="mb-8 space-y-0.5">
+            <p class="font-display text-title font-bold tracking-tight">
+                Settings
+            </p>
+            <p class="text-sm text-muted-foreground">
+                Manage your profile and account settings
+            </p>
+        </header>
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">
