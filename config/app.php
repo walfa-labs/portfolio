@@ -17,6 +17,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Search Engine Indexability
+    |--------------------------------------------------------------------------
+    |
+    | Nothing is indexable while the content is placeholder (§3.1 item 5). While
+    | this is false every page emits `noindex,nofollow`, `robots.txt` answers
+    | `Disallow: /`, the XML sitemap collapses to an empty `<urlset>` and the
+    | `/cv` page stays out of the index. Flip `APP_INDEXABLE` to true once the
+    | content is real. The Atom feed is unaffected: it is a reader feature, not
+    | a crawler one.
+    |
+    */
+
+    'indexable' => (bool) env('APP_INDEXABLE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

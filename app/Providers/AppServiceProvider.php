@@ -11,6 +11,7 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Models\WorkExperience;
 use App\Models\Writing;
+use App\Observers\SitemapCacheObserver;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\ExceptionResponse;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRateLimiters();
+        $this->configureInertiaExceptionHandling();
+        $this->configureSitemapCacheInvalidation();
 
         Relation::morphMap([
             'work_experience' => WorkExperience::class,
@@ -98,6 +103,11 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureRateLimiters(): void
     {
+        RateLimiter::for('contact', fn (Request $request): array => [
+            Limit::perHour(3)->by($request->ip()),
+            Limit::perDay(10)->by($request->ip()),
+        ]);
+
         RateLimiter::for(
             'media-download',
             fn (Request $request): Limit => Limit::perMinute(30)->by($request->ip()),
@@ -108,5 +118,62 @@ class AppServiceProvider extends ServiceProvider
             fn (Request $request): Limit => Limit::perMinute(30)
                 ->by($request->user()?->getAuthIdentifier() ?? $request->ip()),
         );
+    }
+
+    /**
+     * Render the public error page for the four statuses that have one (§3.12).
+     *
+     * The HTTP status is preserved, so `/this-does-not-exist` still answers a
+     * real 404 and maintenance mode a real 503. Every other status keeps
+     * Laravel's own rendering.
+     *
+     * §3.12 gives the public site an error page; §4.6 gives `/api/*` a JSON:API
+     * document with `Content-Type: application/vnd.api+json`, and the two
+     * conflict on exactly these four statuses. §4.6 wins for the API: the
+     * callback below is the exception handler's *finalize* step
+     * (`Handler::finalizeRenderedResponse()`), so it runs after the renderers
+     * in `bootstrap/app.php` have built their document and would otherwise
+     * replace it with the Inertia page. Returning `null` for an `api/*` request
+     * leaves the rendered response untouched, exactly as every renderer there
+     * does for a request it does not own.
+     */
+    protected function configureInertiaExceptionHandling(): void
+    {
+        Inertia::handleExceptionsUsing(function (ExceptionResponse $response): ?ExceptionResponse {
+            if ($response->request->is('api/*')) {
+                return null;
+            }
+
+            if (in_array($response->statusCode(), [403, 404, 500, 503], true)) {
+                return $response->render('public/Error', ['status' => $response->statusCode()])->withSharedData();
+            }
+
+            return null;
+        });
+    }
+
+    /**
+     * Flush the cached sitemap when any content row that reaches it is saved.
+     *
+     * The document is cached for an hour (§3.9), so the flush is the only thing
+     * that keeps a freshly published writing — or a tag whose last item was
+     * unpublished — from being missing until the entry expires. Every content
+     * model plus `Tag` is observed; the observer decides whether the write
+     * actually matters.
+     */
+    protected function configureSitemapCacheInvalidation(): void
+    {
+        foreach ([
+            WorkExperience::class,
+            Education::class,
+            Certification::class,
+            Publication::class,
+            Project::class,
+            Award::class,
+            Writing::class,
+            Tag::class,
+        ] as $model) {
+            $model::observe(SitemapCacheObserver::class);
+        }
     }
 }

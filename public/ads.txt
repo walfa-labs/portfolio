@@ -1,0 +1,11 @@
+# ads.txt — Authorized Digital Sellers (§8.5, §8.7)
+#
+# Google AdSense requires this file to declare the publisher as an authorised
+# seller; without it Google will not serve. The publisher id is a placeholder
+# because no real `ADSENSE_CLIENT` is ever committed (§8.9): replace
+# `pub-0000000000000000` with the `ca-pub-…` value from the AdSense UI, which
+# uses the id without the `ca-` prefix.
+#
+# The certification authority id is UNVERIFIED (§16.2 U4) — confirm it against
+# the AdSense UI alongside the publisher id.
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

@@ -115,4 +115,18 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Contact Form Recipient
+    |--------------------------------------------------------------------------
+    |
+    | The address `POST /contact` queues `App\Mail\ContactMessageReceived` to
+    | (§3.11). The `contact_messages` row is the source of truth, so a blank
+    | address degrades to "stored and logged, not emailed" rather than losing
+    | the submission.
+    |
+    */
+
+    'contact_recipient' => env('CONTACT_EMAIL'),
+
 ];
